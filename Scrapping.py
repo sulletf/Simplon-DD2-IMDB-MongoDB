@@ -88,10 +88,50 @@ class Film:
     return self.url + '/' + 'fullcredits'
 
   def scrap(self):
-    #  A faire : Scrapping de la page HTML
-    pass
+    f = open('data/films/{}'.format(self.id), 'r')
+    soup = BeautifulSoup(f, 'html.parser')
 
-  def load(self):
+    self.title = soup.find('h1').text
+
+    self.grossUSA = self.get_amount(soup, 'Gross USA')
+    self.grossWW = self.get_amount(soup, 'Cumulative Worldwide Gross')
+    self.actors = self.get_actors()
+
+  def get_actors(self):
+    actors = []
+
+    f = open('data/actors/{}'.format(self.id), 'r')
+    soup = BeautifulSoup(f, 'html.parser')
+
+    table = soup.find('table', attrs={"class" :"cast_list"})
+    odd_trs = table.find_all('tr', attrs={"class" :"odd"})
+    for tr in odd_trs:
+      td = tr.find_all('td')[1]
+      actors.append(td.a.text)
+    even_trs = table.find_all('tr', attrs={"class" :"even"})
+    for tr in even_trs:
+      td = tr.find_all('td')[1]
+      actors.append(td.a.text)
+
+    f.close()
+
+    return actors
+
+  def get_amount(self, soup, amount_type):
+    amount = None
+    for div in soup.find_all('div',attrs={"class" :"txt-block"}):
+      h4 = div.find('h4',attrs={"class" :"inline"})
+      if h4 is not None and h4.text == amount_type + ':':
+        amount = div.text.split('\n')[1]
+        # amount is like 'Gross USA: $36,343,858, 15 March 2018'
+        # we clean it
+        pattern = '^' + amount_type + ': \$((\d+,?)+)(,.+?)?$'
+        x = re.match(pattern, amount)
+        amount = x.group(1)
+
+    return amount
+
+  def load(self, conn):
     # A faire : enregistrement du film dans MongoDB
     pass
 
