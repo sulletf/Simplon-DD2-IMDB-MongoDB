@@ -104,10 +104,15 @@ class Film:
     soup = BeautifulSoup(f, 'html.parser')
 
     table = soup.find('table', attrs={"class" :"cast_list"})
+    if table is None:
+      f.close()
+      return []
+
     odd_trs = table.find_all('tr', attrs={"class" :"odd"})
     for tr in odd_trs:
       td = tr.find_all('td')[1]
       actors.append(td.a.text)
+
     even_trs = table.find_all('tr', attrs={"class" :"even"})
     for tr in even_trs:
       td = tr.find_all('td')[1]
@@ -131,10 +136,12 @@ class Film:
 
     return amount
 
-  def load(self, conn):
-    # A faire : enregistrement du film dans MongoDB
-    pass
+  def load(self, db):
+    film_dict = {"title": self.title, "url": self.url, "imdb_id": self.id, "grossUSA": self.grossUSA, "grossWW": self.grossWW, "actors": self.actors}
 
+    film_coll = db.films
+    film_coll.insert_one(film_dict)
+    
   def visu(self):
     # A faire : creation des viz permettant de faire l'analyse des acteurs les 
     pass
